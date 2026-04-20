@@ -29,6 +29,11 @@ except Exception as error:
     st.error(f"Failed to initialize agent: {error}")
     st.stop()
 
+if assistant.llm_backend != "ChatGroq":
+    st.warning(
+        "App is using fallback LLM. Add a valid GROQ_API_KEY in Streamlit secrets to get full-quality answers."
+    )
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "thread_id" not in st.session_state:

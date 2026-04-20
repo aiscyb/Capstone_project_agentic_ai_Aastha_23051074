@@ -337,12 +337,30 @@ class LocalFallbackLLM:
             if "only the information provided in the context" in system_prompt.lower():
                 if "knowledge base" not in system_prompt.lower() and "tool result" not in system_prompt.lower():
                     return _LLMResponse("I don't have that information in my knowledge base.")
-                preview = re.sub(r"\s+", " ", system_prompt)
-                return _LLMResponse(
-                    "Based on the provided context, "
-                    + preview[:250]
-                    + " ..."
-                )
+                tool_section = ""
+                kb_section = ""
+                if "TOOL RESULT:\n" in system_prompt:
+                    tool_section = system_prompt.split("TOOL RESULT:\n", 1)[1].split("\n\n", 1)[0].strip()
+                if "KNOWLEDGE BASE:\n" in system_prompt:
+                    kb_section = system_prompt.split("KNOWLEDGE BASE:\n", 1)[1]
+
+                q_tokens = {t for t in re.findall(r"[a-zA-Z0-9_]+", user_question.lower()) if len(t) > 2}
+                if tool_section and any(t in user_question.lower() for t in ("date", "today", "time", "calculate", "plus", "minus", "divide", "multiply")):
+                    return _LLMResponse(tool_section)
+
+                if kb_section:
+                    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", kb_section) if s.strip()]
+                    ranked = []
+                    for sentence in sentences:
+                        s_tokens = set(re.findall(r"[a-zA-Z0-9_]+", sentence.lower()))
+                        score = len(q_tokens & s_tokens)
+                        ranked.append((score, sentence))
+                    ranked.sort(key=lambda x: x[0], reverse=True)
+                    best_sentences = [s for score, s in ranked[:2] if score > 0]
+                    if not best_sentences:
+                        best_sentences = sentences[:2]
+                    answer = " ".join(best_sentences)
+                    return _LLMResponse(answer if answer else "I don't have that information in my knowledge base.")
             return _LLMResponse("I don't have that information in my knowledge base.")
 
         return _LLMResponse("I don't have that information in my knowledge base.")
