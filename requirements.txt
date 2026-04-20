@@ -1,0 +1,7 @@
+chromadb
+langgraph
+langchain-core
+langchain-groq
+sentence-transformers
+python-dotenv
+streamlit
