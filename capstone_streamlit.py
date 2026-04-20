@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import streamlit as st
@@ -12,6 +13,9 @@ DOMAIN_DESCRIPTION = (
     "Handles customer support queries for returns, refunds, shipping, tracking, cancellations, "
     "damaged items, and escalation guidance."
 )
+
+if "GROQ_API_KEY" in st.secrets and not os.getenv("GROQ_API_KEY"):
+    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 
 
 @st.cache_resource
